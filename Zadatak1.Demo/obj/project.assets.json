@@ -207,6 +207,16 @@
         "build": {
           "build/netstandard2.0/NETStandard.Library.targets": {}
         }
+      },
+      "Zadatak1/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.0",
+        "compile": {
+          "bin/placeholder/Zadatak1.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Zadatak1.dll": {}
+        }
       }
     }
   },
@@ -680,11 +690,17 @@
         "netstandard.library.2.0.3.nupkg.sha512",
         "netstandard.library.nuspec"
       ]
+    },
+    "Zadatak1/1.0.0": {
+      "type": "project",
+      "path": "../Zadatak1/Zadatak1.csproj",
+      "msbuildProject": "../Zadatak1/Zadatak1.csproj"
     }
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v2.1": [
-      "Microsoft.NETCore.App >= 2.1.0"
+      "Microsoft.NETCore.App >= 2.1.0",
+      "Zadatak1 >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -716,7 +732,11 @@
       },
       "frameworks": {
         "netcoreapp2.1": {
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Users\\Milica\\Desktop\\ETF\\Odabrana poglavlja iz operativnih sistema\\Projektni zadaci\\Zadatak1\\OposZadaci2020\\Zadatak1\\Zadatak1.csproj": {
+              "projectPath": "C:\\Users\\Milica\\Desktop\\ETF\\Odabrana poglavlja iz operativnih sistema\\Projektni zadaci\\Zadatak1\\OposZadaci2020\\Zadatak1\\Zadatak1.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
