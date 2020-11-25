@@ -7,21 +7,33 @@ using System.Threading.Tasks;
 namespace Zadatak1.Demo
 {
     class Program
-    {
-        
+    {        
         static void Main(string[] args)
-        {          
+        {
+
+            const int numOfThreads = 4;
                        
             Console.WriteLine("Hello World!");
           
 
-            MyTaskScheduler mts = new MyTaskScheduler(4);
+            MyTaskScheduler mts = new MyTaskScheduler(numOfThreads);
+            LaneWriter laneWriter = new LaneWriter(numOfThreads);
+
+            void printFunction(int value, int duration)
+            {
+                for (int i = 0; i < duration; ++i)
+                {
+                    laneWriter.WriteToLane(Thread.CurrentThread.ManagedThreadId, value);
+                    laneWriter.PrintLanes();
+                    Task.Delay(1000).Wait();
+                }
+            }
 
             Action action1 = () =>
                 {
                     for (int j = 0; j < 10; j++)
                     {
-                        Console.WriteLine("5    " + Thread.CurrentThread.ManagedThreadId);
+                        Console.WriteLine("5  running on thread  " + Thread.CurrentThread.ManagedThreadId);
                        
                         Thread.Sleep(1000);
                     }
@@ -46,7 +58,7 @@ namespace Zadatak1.Demo
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    Console.WriteLine("3    " + Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine("3  running on thread    " + Thread.CurrentThread.ManagedThreadId);
                     Thread.Sleep(1000);
                 }
             };
@@ -59,7 +71,7 @@ namespace Zadatak1.Demo
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    Console.WriteLine(9 + "    "+ Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine(9 + "  running on thread   " + Thread.CurrentThread.ManagedThreadId);
                     Thread.Sleep(1000);
                 }
             };
@@ -72,7 +84,7 @@ namespace Zadatak1.Demo
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    Console.WriteLine(2 + "    " + Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine(2 + "  running on thread   " + Thread.CurrentThread.ManagedThreadId);
                     Thread.Sleep(1000);
                 }
             };
@@ -80,14 +92,11 @@ namespace Zadatak1.Demo
 
             mts.AddTask(2, t4);
 
-
-
-
             Action action5 = () =>
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    Console.WriteLine(1 + "    " + Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine(1 + " running on thread    " + Thread.CurrentThread.ManagedThreadId);
                     Thread.Sleep(1000);
                 }
             };
