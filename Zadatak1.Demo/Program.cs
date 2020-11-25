@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -20,6 +21,14 @@ namespace Zadatak1.Demo
             });
 
             task.Wait();
+
+            Task taskB = Task.Run(() => Thread.Sleep(2000));
+            Console.WriteLine("taskB status {0}", taskB.Status);
+
+            taskB.Wait();
+            Console.WriteLine("taskB status {0}", taskB.Status);
+
+
         }
     }
 }
