@@ -32,13 +32,30 @@ namespace Zadatak1.Demo
 
             TaskToExecute tte = printFunction;
 
-            mts.AddTask(3, (x) => { Console.WriteLine(3 + " " + Thread.CurrentThread.ManagedThreadId); });
-            mts.AddTask(2, (x) => { Console.WriteLine(2 + " " + Thread.CurrentThread.ManagedThreadId); });
-            mts.AddTask(1, (x) => { Console.WriteLine(1 + " " + Thread.CurrentThread.ManagedThreadId); });
-            mts.AddTask(5, (x) => { Console.WriteLine(5 + " " + Thread.CurrentThread.ManagedThreadId); });
-            mts.AddTask(7, (x) => { Console.WriteLine(7 + " " + Thread.CurrentThread.ManagedThreadId); });
-            mts.AddTask(4, (x) => { Console.WriteLine(4 + " " + Thread.CurrentThread.ManagedThreadId); });
-            mts.AddTask(8, (x) => { Console.WriteLine(8 + " " + Thread.CurrentThread.ManagedThreadId); });
+            mts.AddTask(3, (x) => { Console.WriteLine(3 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(10000);
+            }, 1000);
+
+            mts.AddTask(2, (x) => { Console.WriteLine(2 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(1200);
+            },500);
+
+            /*
+            mts.AddTask(1, (x) => { Console.WriteLine(1 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(1100);
+            });
+            mts.AddTask(5, (x) => { Console.WriteLine(5 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(1500);
+            });
+            mts.AddTask(7, (x) => { Console.WriteLine(7 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(1700);
+            });
+            mts.AddTask(4, (x) => { Console.WriteLine(4 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(1400);
+            });
+            mts.AddTask(8, (x) => { Console.WriteLine(8 + " nit " + Thread.CurrentThread.ManagedThreadId);
+                Thread.Sleep(1800);
+            });*/
 
 
 
