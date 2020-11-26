@@ -9,22 +9,27 @@ using System.Text;
 
 namespace Zadatak1
 {
+    public delegate void TaskToExecute(int priority);
+
     public class MyTaskScheduler : TaskScheduler, IDisposable
     {
         //niti u bazenu
         private Thread[] myThreadPool;
 
+        private int position;
         // svi taskovi 
-        private List<(int, Task)> allTasks = new List<(int, Task)>();
+        private List<(int, TaskToExecute)> allTasks = new List<(int, TaskToExecute)>();
 
         // taskovi koji treba da se izvrse
-        public LinkedList<Task> pendingTasks = new LinkedList<Task>();
+        public List<Task> pendingTasks = new List<Task>();
 
         // koliko taskova moze istovremeno da se izvrsava, broj niti u thread pool-u
         private int MaxDegreeOfParallelism;
 
         // broj taskova koji se trenutno izvrsavaju
         private int currentlyRunning = 0;
+
+        private TaskToExecute addAfter;
 
         public MyTaskScheduler(int maxDegreeOfParallelism)
         {
@@ -43,6 +48,7 @@ namespace Zadatak1
             }
         }
 
+        public Task Run(Action action) => Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, this);
 
         // override
         protected override IEnumerable<Task> GetScheduledTasks()
@@ -54,7 +60,10 @@ namespace Zadatak1
 
         protected override void QueueTask(Task task)
         {
-             pendingTasks.AddLast(task);
+            lock (pendingTasks)
+            {
+                pendingTasks.Insert(position, task);
+            }
         }
 
         private void RunTask()
@@ -75,14 +84,15 @@ namespace Zadatak1
                             continue;
                         }
 
-                        task = pendingTasks.First.Value;
-                        pendingTasks.RemoveFirst();
+                        task = pendingTasks[0];
+                        pendingTasks.RemoveAt(0);
                         allTasks.RemoveAt(0);
                     }
 
 
                     Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+ " zadatak: "+task.Status);
-                    task.Start();
+                    //task.Start();
+                    TryExecuteTask(task);
                     Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+" zadatak:  "+task.Status);
 
                 } catch (Exception e)
@@ -93,7 +103,6 @@ namespace Zadatak1
 
         }
 
-
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
              Console.WriteLine("ne daj boze");
@@ -101,26 +110,35 @@ namespace Zadatak1
         }
 
 
-        public void AddTask(int priority, Task task)
+        public void AddTask(int priority, TaskToExecute task)
         {
             allTasks.Add((priority, task));
             allTasks.Sort((x, y) => x.Item1.CompareTo(y.Item1));
+            position = allTasks.FindIndex(a => a.Item2.Equals(task));
+            
+            Task t = new Task(() =>
+            {
+                task(priority);
+            });
+            t.Start(this);
 
             Console.WriteLine("Stanje liste:");
 
             foreach (var a in allTasks)
                 Console.Write(a.Item1 + " ");
+
             Console.WriteLine("\n");
 
-            lock (pendingTasks)
-            {
-                pendingTasks.Clear();
-                for (int i = 0; i < allTasks.Count; i++)
-                {
-                    //if (!allTasks[i].Item2.Status.Equals(TaskStatus.Running)) 
-                    QueueTask(allTasks[i].Item2);
-                }
-            }
+            //lock (pendingTasks)
+            //{
+            //    //pendingTasks.Clear();
+
+            //    for (int i = 0; i < allTasks.Count; i++)
+            //    {
+            //        //if (!allTasks[i].Item2.Status.Equals(TaskStatus.Running))
+            //       //     QueueTask(allTasks[i].Item2);
+            //    }
+            //}
         }
 
 
@@ -138,6 +156,22 @@ namespace Zadatak1
         {
              throw new NotImplementedException();
         }
+    }
+
+    public class Data
+    {
+        public int ThreadID;
+        public int TaskPriority;
+
+        public bool isCancelled;
+
+        public Data (int taskPriority, int threadID)
+        {
+            TaskPriority = taskPriority;
+            ThreadID = threadID;
+        }
+
+        public void Cancel() => isCancelled = true;
     }
 
 
