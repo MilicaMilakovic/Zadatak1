@@ -146,13 +146,13 @@ namespace Zadatak1
 
            Task callback = Task.Factory.StartNew(() =>
            {
-               Console.WriteLine("pokrenut");
+               Console.WriteLine("pokrenut token za "+ priority);
                Task.Delay(maxDuration).Wait();
                cancellationTokenSource.Cancel();
                
-               if(cancellationTokenSource.IsCancellationRequested)
-                   Console.WriteLine("requested");
-               Console.WriteLine("gotovo");
+               //if(cancellationTokenSource.IsCancellationRequested)
+                   //Console.WriteLine("requested");
+               //Console.WriteLine("gotovo");
            });
            
             Console.WriteLine("Stanje liste:");
