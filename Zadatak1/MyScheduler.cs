@@ -97,7 +97,7 @@ namespace Zadatak1
                         Thread callback = new Thread(() =>
                         {
                             //Console.WriteLine(taskToTerminate.toSting());
-                            Thread.Sleep(TimeSpan.FromSeconds(2));
+                            Thread.Sleep(TimeSpan.FromSeconds(taskToTerminate.maxTime));
                             taskToTerminate.Cancel();
                         });
                         callback.Start();
