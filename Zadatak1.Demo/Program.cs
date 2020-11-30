@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,7 +47,9 @@ namespace Zadatak1.Demo
             ScheduleTask(3, printFunction, 8);
             ScheduleTask(2, printFunction, 11);
             ScheduleTask(4, printFunction, 5);
-            ScheduleTask(5,printFunction, 7);           
+            ScheduleTask(5, printFunction, 7);    
+            
+
 
         }
     }

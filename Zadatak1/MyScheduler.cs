@@ -4,14 +4,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Text;
-
 
 namespace Zadatak1
 {
     public delegate void TaskToExecute(MyTask mt);
 
-    public class MyTaskScheduler : TaskScheduler, IDisposable
+    public class MyTaskScheduler : TaskScheduler
     {
         //niti u bazenu
         private Thread[] myThreadPool;
@@ -30,9 +28,8 @@ namespace Zadatak1
         private int currentlyRunning = 0;
 
         private TaskToExecute addAfter;
-        private bool[] isCancelled;
+        public bool preemption = true;
 
-        private Dictionary<Task, CancellationTokenSource> map = new Dictionary<Task, CancellationTokenSource>();
         private Dictionary<Task, MyTask> mapa = new Dictionary<Task, MyTask>();
         public MyTaskScheduler(int maxDegreeOfParallelism)
         {
@@ -45,29 +42,55 @@ namespace Zadatak1
                 myThreadPool[i] = new Thread(RunTask)
                 {
                     IsBackground = false
-                 };
+                };
                 myThreadPool[i].Start();
-                Console.WriteLine("thread"+myThreadPool[i].ManagedThreadId +" start " );
+                Console.WriteLine("Thread"+myThreadPool[i].ManagedThreadId +" start. " );
             }
         }
 
-        public Task Run(Action action) => Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, this);
-
-        // override
         protected override IEnumerable<Task> GetScheduledTasks()
         {
-            Console.WriteLine("mgfhf");
-            return pendingTasks;
+            return pendingTasks.ToArray();
         }
-
 
         protected override void QueueTask(Task task)
         {
             lock (pendingTasks)
             {
                 pendingTasks.Insert(position, task);
+
+               /* if (preemption)
+                {
+                    Thread t = new Thread(() =>
+                     {
+                         // sve niti trenutno izvrsavaju neki task
+                         if (pendingTasks.Count > MaxDegreeOfParallelism)
+                         {
+                             Console.WriteLine("test1");
+                             if (mapa.TryGetValue(task, out MyTask mt))
+                             {
+                                 Console.WriteLine("test");
+                                 // task - koji je zadnji stigao 
+                                 // iz mape treba naci task koji ima najmanji prioritet,
+                                 // i ako je njegov prioritet manji od zadnjeg dodatog, brise se iz liste
+                                 // ubacuje se ovaj novi i kad 
+
+                                 MyTask p = mapa.Values.Aggregate((i1, i2) => i1.taskPriority < i2.taskPriority ? i1 : i2);
+
+                                 if (p.taskPriority < mt.taskPriority)
+                                 {
+                                     p.Pause();
+                                     Console.WriteLine(mt.taskPriority+" PAUZIRAN");
+
+                                 }
+                             }
+
+                         }
+                     }); t.Start();
+                }*/
             }
         }
+       
 
         private void RunTask()
         {
@@ -79,10 +102,8 @@ namespace Zadatak1
                     Task task;
                     lock (pendingTasks)
                     {
-
                         if (pendingTasks.Count == 0)
                         {
-                            //Console.WriteLine(" a");
                             continue;
                         }
 
@@ -90,24 +111,19 @@ namespace Zadatak1
                         pendingTasks.RemoveAt(0);
                         allTasks.RemoveAt(0);
                     }
-                    //Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+ " zadatak: "+task.Status);
 
                     if (mapa.TryGetValue(task, out MyTask taskToTerminate))
                     {
                         Thread callback = new Thread(() =>
-                        {
-                            //Console.WriteLine(taskToTerminate.toSting());
+                        {                            
                             Thread.Sleep(TimeSpan.FromSeconds(taskToTerminate.maxTime));
                             taskToTerminate.Cancel();
                         });
                         callback.Start();
                     }
 
-                    TryExecuteTask(task);
+                    TryExecuteTask(task);                
                     
-                    
-                    //Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+" zadatak:  "+task.Status);
-
                 } catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
@@ -121,7 +137,6 @@ namespace Zadatak1
              return false;
         }
 
-
         public void AddTask(MyTask myTask)
         {
             allTasks.Add((myTask.taskPriority, myTask.taskToExecute));
@@ -131,24 +146,13 @@ namespace Zadatak1
             myTask.task.Start(this);
 
             mapa.Add(myTask.task, myTask);
-           
+                       
             Console.WriteLine("Stanje liste:");
 
             foreach (var a in allTasks)
                 Console.Write(a.Item1 + " ");
-
             Console.WriteLine("\n");        
-        }       
-
-        public async Task terminate(MyTask mt)
-        {
-
-        }
-
-        public void Dispose()
-        {
-             throw new NotImplementedException();
-        }
+        }                
     }
 
     public class MyTask
@@ -158,7 +162,6 @@ namespace Zadatak1
         public bool isPaused;
         public bool isDone;
 
-        //private Thread timeOut;
         public Task task;
         public TaskToExecute taskToExecute;
 
@@ -185,42 +188,5 @@ namespace Zadatak1
         }
     }
 
-
-    public class LaneWriter
-    {
-        readonly Mutex laneMutex = new Mutex();
-
-        public int NumLanes => lanes.Length;
-
-        readonly List<int>[] lanes;
-
-        public LaneWriter(int numLanes)
-        {
-            laneMutex.WaitOne();
-            lanes = new List<int>[numLanes];
-            for (int i = 0; i < numLanes; ++i)
-                lanes[i] = new List<int>();
-            laneMutex.ReleaseMutex();
-        }
-
-        public void WriteToLane(int lane, int value) => lanes[lane].Add(value);
-
-        public void PrintLanes()
-        {
-            laneMutex.WaitOne();
-            Console.Clear();
-            int maxLength = lanes.Max(x => x.Count);
-            for (int i = 0; i < maxLength; ++i)
-            {
-                Console.Write($"T{i}:\t");
-                for (int j = 0; j < NumLanes; ++j)
-                    if (i < lanes[j].Count)
-                        Console.Write($"{lanes[j][i]}\t");
-                    else
-                        Console.Write("_\t");
-                Console.WriteLine();
-            }
-            laneMutex.ReleaseMutex();
-        }
-    }
+   
 }
