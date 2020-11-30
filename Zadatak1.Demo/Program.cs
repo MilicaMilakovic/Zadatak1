@@ -19,20 +19,35 @@ namespace Zadatak1.Demo
             MyTaskScheduler mts = new MyTaskScheduler(numOfThreads);
             LaneWriter laneWriter = new LaneWriter(numOfThreads);
 
-            void printFunction(int value)
+            void printFunction(MyTask mt)
             {
+                for (int i = 0; i < 10; ++i)
+                {
+                    while(mt.isPaused)
+                    {
+                        Thread.Sleep(1000);
+                    }
 
-                //for (int i = 0; i < 10; ++i)
-                //{
-                //    laneWriter.WriteToLane(Thread.CurrentThread.ManagedThreadId, value);
-                //    laneWriter.PrintLanes();
-                //    Task.Delay(1000).Wait();
-                //}
+                    if(mt.isCancelled)
+                    {
+                        Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId+" |  PREKINUT.");
+                        return;
+                    }
+                    Console.WriteLine("Prioritet:"+mt.taskPriority+ "| ThreadID:"+Thread.CurrentThread.ManagedThreadId);
+                   
+                    Task.Delay(1000).Wait();
+                }
+                Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId+" | ZAVRSEN.");
+
             }
 
             TaskToExecute tte = printFunction;
 
-            mts.AddTask(3, (x) => { Console.WriteLine(3 + " nit " + Thread.CurrentThread.ManagedThreadId);
+            MyTask fistTask = new MyTask(1, printFunction, 4);
+            mts.AddTask(fistTask);
+
+
+           /* mts.AddTask(3, (x) => { Console.WriteLine(3 + " nit " + Thread.CurrentThread.ManagedThreadId);
                 Thread.Sleep(10000);
             }, 1000);
 

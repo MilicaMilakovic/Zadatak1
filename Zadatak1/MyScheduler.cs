@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Zadatak1
 {
-    public delegate void TaskToExecute(int priority);
+    public delegate void TaskToExecute(MyTask mt);
 
     public class MyTaskScheduler : TaskScheduler, IDisposable
     {
@@ -33,7 +33,7 @@ namespace Zadatak1
         private bool[] isCancelled;
 
         private Dictionary<Task, CancellationTokenSource> map = new Dictionary<Task, CancellationTokenSource>();
-
+        private Dictionary<Task, MyTask> mapa = new Dictionary<Task, MyTask>();
         public MyTaskScheduler(int maxDegreeOfParallelism)
         {
             if (maxDegreeOfParallelism < 1) throw new Exception();
@@ -90,26 +90,23 @@ namespace Zadatak1
                         pendingTasks.RemoveAt(0);
                         allTasks.RemoveAt(0);
                     }
-                    Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+ " zadatak: "+task.Status);
-                    //int id = Thread.CurrentThread.ManagedThreadId;
-                    /*Thread t = new Thread(() =>
+                    //Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+ " zadatak: "+task.Status);
+
+                    if (mapa.TryGetValue(task, out MyTask taskToTerminate))
                     {
-                        var token = new TaskCanceledException(task).CancellationToken;
-                        while(true)
+                        Thread callback = new Thread(() =>
                         {
-                            if(token.IsCancellationRequested)
-                            {
-                                isCancelled[id % MaxDegreeOfParallelism] = true;
-                                return;
-                            }
-                            Thread.Sleep(100);
-                        }
-                    });
-                    t.Start(); */
-                    
+                            //Console.WriteLine(taskToTerminate.toSting());
+                            Thread.Sleep(TimeSpan.FromSeconds(2));
+                            taskToTerminate.Cancel();
+                        });
+                        callback.Start();
+                    }
+
                     TryExecuteTask(task);
                     
-                    Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+" zadatak:  "+task.Status);
+                    
+                    //Console.WriteLine("thread:"+Thread.CurrentThread.ManagedThreadId+" zadatak:  "+task.Status);
 
                 } catch (Exception e)
                 {
@@ -125,54 +122,27 @@ namespace Zadatak1
         }
 
 
-        public void AddTask(int priority, TaskToExecute task, int maxDuration)
+        public void AddTask(MyTask myTask)
         {
-            allTasks.Add((priority, task));
+            allTasks.Add((myTask.taskPriority, myTask.taskToExecute));
             allTasks.Sort((x, y) => x.Item1.CompareTo(y.Item1));
-            position = allTasks.FindIndex(a => a.Item2.Equals(task));
+            position = allTasks.FindIndex(a => a.Item2.Equals(myTask.taskToExecute));
 
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(maxDuration);
-            CancellationToken cancellationToken = cancellationTokenSource.Token;
-            
-            Task t = new Task(() =>
-            {                
-                task(priority);
-            }, cancellationToken);
-            t.Start(this);
+            myTask.task.Start(this);
 
-            map.Add(t, cancellationTokenSource);
-
-            //cancellationTokenSource.CancelAfter(maxDuration);
-
-           Task callback = Task.Factory.StartNew(() =>
-           {
-               Console.WriteLine("pokrenut");
-               Task.Delay(maxDuration).Wait();
-               cancellationTokenSource.Cancel();
-               
-               if(cancellationTokenSource.IsCancellationRequested)
-                   Console.WriteLine("requested");
-               Console.WriteLine("gotovo");
-           });
+            mapa.Add(myTask.task, myTask);
            
             Console.WriteLine("Stanje liste:");
 
             foreach (var a in allTasks)
                 Console.Write(a.Item1 + " ");
 
-            Console.WriteLine("\n");
-        
-        }
+            Console.WriteLine("\n");        
+        }       
 
-
-        public static void printMethod (int priority)
+        public async Task terminate(MyTask mt)
         {
-            for(int i=0; i<10; i++)
-            {
-                Console.WriteLine(priority);
-                Thread.Sleep(1000);
-            }
-           
+
         }
 
         public void Dispose()
@@ -181,20 +151,38 @@ namespace Zadatak1
         }
     }
 
-    public class Data
+    public class MyTask
     {
-        public int ThreadID;
-        public int TaskPriority;
-
+        public int taskPriority;
         public bool isCancelled;
+        public bool isPaused;
+        public bool isDone;
 
-        public Data (int taskPriority, int threadID)
+        //private Thread timeOut;
+        public Task task;
+        public TaskToExecute taskToExecute;
+
+        public int maxTime;
+
+        public MyTask (int taskPriority, TaskToExecute taskToExecute, int maxTime)
         {
-            TaskPriority = taskPriority;
-            ThreadID = threadID;
+            this.taskPriority = taskPriority;
+            this.maxTime = maxTime;
+            this.taskToExecute = taskToExecute;
+
+           task = new Task(() =>
+           {
+               taskToExecute(this);
+           });            
         }
 
         public void Cancel() => isCancelled = true;
+        public void Pause() => isPaused = true;
+
+        public  string toSting()
+        {
+            return "Prioritet: " + taskPriority;
+        }
     }
 
 
