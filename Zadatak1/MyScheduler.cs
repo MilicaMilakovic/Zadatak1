@@ -18,6 +18,8 @@ namespace Zadatak1
         // svi taskovi 
         private List<(int, TaskToExecute)> allTasks = new List<(int, TaskToExecute)>();
 
+        public static List<Task> taskovi = new List<Task>();
+
         // taskovi koji treba da se izvrse
         public List<Task> pendingTasks = new List<Task>();
 
@@ -64,13 +66,14 @@ namespace Zadatak1
                     {
                         Thread.Sleep(500);
                         // sve niti trenutno izvrsavaju neki task
-                        if (pendingTasks.Count <= MaxDegreeOfParallelism)
+                        if (pendingTasks.Count >= MaxDegreeOfParallelism)
                         {
                             //Console.WriteLine("test1");
 
                             if (mapa.TryGetValue(novi, out MyTask mt))
                             {
-                                //Console.WriteLine("test");
+                                //Console.WriteLine("count:"+pendingTasks.Count);
+                                //Console.WriteLine("novi  {0}", mt.taskPriority);
 
                                 // novi - koji je zadnji stigao 
 
@@ -80,47 +83,21 @@ namespace Zadatak1
 
                                 MyTask p = mapa.Values.Aggregate((i1, i2) => i1.taskPriority < i2.taskPriority ? i1 : i2);
 
+                                //Console.WriteLine("najmanji {0}", p.taskPriority);
 
                                 if (p.taskPriority < mt.taskPriority)
                                 {
-                                    p.Pause();
+                                    //Console.WriteLine("testtt mt{0} p{1}",mt.taskPriority,p.taskPriority);
                                     p.executeNextInfo = mt;
-                                    p.executeNext = mt.executeNext;
-                                                                       
+                                    p.executeNext = mt.taskToExecute;
+                                    p.Pause();
+
                                 }
                             }
 
                         }
                     }
                 }); pauseTask.Start();
-
-
-               /* Thread checkForPausedTasks = new Thread(() =>
-                {
-                    Console.WriteLine("checkForPausedTasks started");
-                    while (true)
-                    {
-                        Thread.Sleep(500);
-                        lock (pausedTasks)
-                        {
-                            if (pausedTasks.Count > 0 && pendingTasks.Count < maxDegreeOfParallelism)
-                            {
-                                Console.WriteLine("pauzirani task");
-                                Task t;
-                                MyTask m;
-
-                                (t, m) = pausedTasks[0];
-                                pausedTasks.RemoveAt(0);
-
-                                m.Resume();
-                                Console.WriteLine(m.toSting() + "|     NASTAVLJA IZVRSAVANJE");
-                                if (!t.Status.Equals(TaskStatus.Running))
-                                    t.Start(this);
-                            }
-                        }
-                    }
-                });
-                checkForPausedTasks.Start();*/
             }
         }
 
@@ -135,7 +112,7 @@ namespace Zadatak1
             lock (pendingTasks)
             {
                 pendingTasks.Insert(position, task);
-                if (pendingTasks.Count >= MaxDegreeOfParallelism)
+                if (pendingTasks.Count > MaxDegreeOfParallelism)
                     novi = task;
             }
         }
@@ -182,7 +159,7 @@ namespace Zadatak1
 
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
-             Console.WriteLine("ne daj boze");
+             //Console.WriteLine("ne daj boze");
              return false;
         }
 
@@ -193,22 +170,14 @@ namespace Zadatak1
             position = allTasks.FindIndex(a => a.Item2.Equals(myTask.taskToExecute));
 
             myTask.position = position;
+
             novi = myTask.task;
             myTask.task.Start(this);
 
             mapa.Add(myTask.task, myTask);
             mapaInverted.Add(myTask, myTask.task);
-                       
-            /*Console.WriteLine("Stanje allTasks liste:");
-
-            foreach (var a in allTasks)
-                Console.Write(a.Item1 + " ");
-            Console.WriteLine("\n");        
-
-
-            foreach(var x in pausedTasks)
-                Console.Write(x.Item2.isPaused + " " + x.Item2.taskPriority);
-            Console.WriteLine("\n");*/
+            taskovi.Add(myTask.task);
+            
         }                
     }
 
