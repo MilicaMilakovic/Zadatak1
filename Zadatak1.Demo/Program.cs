@@ -20,10 +20,14 @@ namespace Zadatak1.Demo
         {
             for (int i = 0; i < defaultDuration; ++i)
             {
-                while (mt.isPaused)
+                if(mt.isPaused)
                 {
-                    Thread.Sleep(1000);
-                }
+                    Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  PAUZIRAN.");
+                    mt.executeNext(mt.executeNextInfo);
+
+                    Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  NASTAVLJEN.");
+                    mt.Resume();
+                }              
 
                 if (mt.isCancelled)
                 {
@@ -43,14 +47,26 @@ namespace Zadatak1.Demo
             Console.WriteLine("Hello World!");                
             TaskToExecute tte = printFunction;
 
-            ScheduleTask(1, printFunction, 2);
-            ScheduleTask(3, printFunction, 8);
+            ScheduleTask(7, printFunction, 11);
+            ScheduleTask(3, printFunction, 11);
             ScheduleTask(2, printFunction, 11);
-            ScheduleTask(4, printFunction, 5);
-            ScheduleTask(5, printFunction, 7);    
+            ScheduleTask(4, printFunction, 11);
+            Thread.Sleep(3000);
+
+            Console.WriteLine("prvi thread sleep");
+
+            ScheduleTask(10, printFunction, 11);
+
+
+            Thread.Sleep(3000);
+            Console.WriteLine("drugi thread sleep");
+
+            ScheduleTask(8, printFunction, 11);
+
+            Thread.Sleep(5000);
+            Console.WriteLine("treci thread sleep");
+            ScheduleTask(9, printFunction, 7);
             
-
-
         }
     }
 }
