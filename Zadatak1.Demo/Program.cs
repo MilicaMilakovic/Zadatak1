@@ -90,6 +90,8 @@ namespace Zadatak1.Demo
 
             try
             {
+                //Console.WriteLine("kraaaj");
+                //Console.ReadLine();
                 Task.WaitAll(MyTaskScheduler.taskovi.ToArray());
 
                 Console.WriteLine("=====================================");

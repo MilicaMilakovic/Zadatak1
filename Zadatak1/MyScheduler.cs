@@ -22,14 +22,10 @@ namespace Zadatak1
         public static List<Task> taskovi = new List<Task>();
         // taskovi koji treba da se izvrse
         public static List<Task> pendingTasks = new List<Task>();
-
+        // taskovi koji se trenutno izvrsavaju
         public static List<MyTask> currentlyRunning=new List<MyTask>();
-
         // koliko taskova moze istovremeno da se izvrsava, broj niti u thread pool-u
         private int MaxDegreeOfParallelism;
-
-        // broj taskova koji se trenutno izvrsavaju
-        //private int currentlyRunning;
 
         private TaskToExecute addAfter;
         private static bool preemption = false;
@@ -64,49 +60,32 @@ namespace Zadatak1
                     {
                         Thread.Sleep(500);
                         // sve niti trenutno izvrsavaju neki task
-
                        
                         if (currentlyRunning.Count == maxDegreeOfParallelism)
-                        {
-                            //novi = pendingTasks[0];
-                            //Console.WriteLine("test1");
-                            //Console.WriteLine("count:" + pendingTasks.Count);
+                        {                           
                             if (novi != null)
                             {
                                 if (mapa.TryGetValue(novi, out MyTask mt))
                                 {
-
                                     Console.WriteLine("novi  {0}", mt.taskPriority);
 
                                     // novi - koji je zadnji stigao 
-
-                                    // iz mape treba naci task koji ima najmanji prioritet,
-                                    // i ako je njegov prioritet manji od zadnjeg dodatog, brise se iz liste
-                                    // ubacuje se ovaj novi i kad 
                                     
-                                    Console.WriteLine("currently runnig: "+currentlyRunning.Count + ":::::");
+                                    Console.WriteLine("currently running: "+currentlyRunning.Count );
 
                                     List<MyTask> miniList = new List<MyTask>();
                                     for(int i=0;i<currentlyRunning.Count;i++)
                                     {
                                         if (!currentlyRunning[i].isPaused)
                                             miniList.Add(currentlyRunning[i]);
-
                                     }
 
                                     MyTask min = miniList.Aggregate((i1, i2) => (i1.taskPriority < i2.taskPriority) ? i1 : i2);
-
-                                    //Console.WriteLine(min.taskPriority + " minimalni prioritet");
-                                    //Console.WriteLine("prije continue");
+                                                                       
                                     novi = null; 
                                     if (min.isPaused)
                                         continue;
                                     
-                                    //MyTask p = currentlyRunning.Aggregate((i1, i2) => (i1.taskPriority < i2.taskPriority) ? i1 : i2);
-                                    //  MyTask p= currentlyRunning.                                    
-
-                                    //Console.WriteLine("najmanji {0}", p.taskPriority);
-
                                     if (min.taskPriority < mt.taskPriority)
                                     {
                                         Console.WriteLine(" mt{0} => min{1}", mt.taskPriority, min.taskPriority);
@@ -125,12 +104,10 @@ namespace Zadatak1
                             }
 
                         }
-                        //}
                     }
                 }); pauseTask.Start();
             }
         }
-
 
         protected override IEnumerable<Task> GetScheduledTasks()
         {
@@ -143,8 +120,7 @@ namespace Zadatak1
             {
                 pendingTasks.Insert(position, task);               
             }
-        }
-       
+        }       
 
         private void RunTask()
         {
@@ -191,8 +167,7 @@ namespace Zadatak1
         {
              //Console.WriteLine("ne daj boze");
              return false;
-        }
-        
+        }        
 
         public void AddTask(MyTask myTask)
         {
@@ -213,15 +188,15 @@ namespace Zadatak1
             taskovi.Add(myTask.task);
 
 
-           /* Console.WriteLine("allTasks:");
-            foreach (var x in allTasks)
-                Console.Write(x.taskPriority + " "+x.position+" | ");
+            //Console.WriteLine("allTasks:");
+            //foreach (var x in allTasks)
+            //    Console.Write(x.taskPriority  + " | ");
 
-            Console.WriteLine("\n");
-            */
+            //Console.WriteLine("\n");
+
 
             //Console.WriteLine("pendingTasks:");
-            
+
             //Console.WriteLine("pending tasks count:" + pendingTasks.Count);
         }
 
