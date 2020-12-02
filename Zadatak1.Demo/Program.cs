@@ -8,7 +8,8 @@ namespace Zadatak1.Demo
     {
         const int numOfThreads = 4;
         const int defaultDuration = 10;
-        public static MyTaskScheduler mts = new MyTaskScheduler(numOfThreads);
+
+        public static MyTaskScheduler mts;
 
         public static void ScheduleTask(int priority, TaskToExecute tte, int maxDuration)
         {
@@ -36,6 +37,11 @@ namespace Zadatak1.Demo
                 if (mt.isCancelled)
                 {
                     Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  PREKINUT.");
+                    lock (MyTaskScheduler.currentlyRunning)
+                    {
+                        MyTaskScheduler.currentlyRunning.Remove(mt);
+                    }
+                    mt.isDone = true;
                     return;
                 }
 
@@ -45,12 +51,21 @@ namespace Zadatak1.Demo
             }
             Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  ZAVRSEN.");
 
+            mt.isDone = true;
+            lock(MyTaskScheduler.currentlyRunning)
+            {
+                MyTaskScheduler.currentlyRunning.Remove(mt);
+            }
         }
         static void Main(string[] args)
         {                                
-            Console.WriteLine("Hello World!");     
+            Console.WriteLine("Hello World!\n");     
             
             TaskToExecute tte = printFunction;
+
+            MyTaskScheduler.setPreemption();
+
+            mts = new MyTaskScheduler(numOfThreads);
 
             ScheduleTask(7, printFunction, 11);
             ScheduleTask(3, printFunction, 11);
@@ -59,18 +74,18 @@ namespace Zadatak1.Demo
 
             Thread.Sleep(5000);
 
-            //Console.WriteLine("prvi thread sleep. dolazi prioritet 10");
+            Console.WriteLine("prvi thread sleep. dolazi prioritet 10");
 
             ScheduleTask(10, printFunction, 5);
 
 
             Thread.Sleep(3000);
-            //Console.WriteLine("drugi thread sleep");
+            Console.WriteLine("drugi thread sleep, dolazi 8");
 
             ScheduleTask(8, printFunction, 11);
 
             Thread.Sleep(5000);
-            //Console.WriteLine("treci thread sleep");
+            Console.WriteLine("treci thread sleep, dolazi 9");
             ScheduleTask(9, printFunction, 7);
 
             try
