@@ -9,26 +9,36 @@ namespace Zadatak1
 {
     public delegate void TaskToExecute(MyTask mt);
 
+    /*<summary>Klasa <c>MyTaskScheduler</c> 
+     * predstavlja klasu koja modeluje rasporedjivac zadataka. 
+     * Ova klasa nasljedjuje klasu <c>TaskScheduler</c>. </summary> 
+     * **/
     public class MyTaskScheduler : TaskScheduler
     {
         //niti u bazenu
         private Thread[] myThreadPool;
 
+        // koliko taskova moze istovremeno da se izvrsava, broj niti u thread pool-u
+        private int MaxDegreeOfParallelism;
+
+        // pozicija na koju se dodaje novi zadatak u listi allTasks
         private int position;
 
         // svi taskovi 
         public static List<MyTask> allTasks = new List<MyTask>();
-
+        
         public static List<Task> taskovi = new List<Task>();
+
         // taskovi koji treba da se izvrse
         public static List<Task> pendingTasks = new List<Task>();
-        // taskovi koji se trenutno izvrsavaju
-        public static List<MyTask> currentlyRunning=new List<MyTask>();
-        // koliko taskova moze istovremeno da se izvrsava, broj niti u thread pool-u
-        private int MaxDegreeOfParallelism;
 
-        private TaskToExecute addAfter;
+        // taskovi koji se trenutno izvrsavaju
+        public static List<MyTask> currentlyRunning=new List<MyTask>();       
+
+        // flag pomocu kojeg se bira preventivno ili nepreventivno rasporedjivanje
         private static bool preemption = false;
+
+        // zadatak koji ceka na izvrsavanje, zbog zauzetosti svih niti
         Task novi;
 
         private Dictionary<Task, MyTask> mapa = new Dictionary<Task, MyTask>();
@@ -50,6 +60,11 @@ namespace Zadatak1
                 Console.WriteLine("Thread"+myThreadPool[i].ManagedThreadId +" start. " );
             }
 
+            /** <summary> U slucaju preventivnog zaustavljanja, pokrece se nit koja ce da pauzira izvrsavanje
+             * zadatka najmanjeg prioriteta, i na toj niti iz thread pool-a pokrene izvrsavanje novog zadatka,
+             * ukoliko je njegov prioritet veci od prioriteta pauziranog. Nit konstatno radi i provjerava da li
+             * je doslo do preuzimanja. </summary>  
+             * **/
             if (preemption)
             {
                 Thread pauseTask = new Thread(() =>
@@ -59,19 +74,29 @@ namespace Zadatak1
                     while (true)
                     {
                         Thread.Sleep(500);
-                        // sve niti trenutno izvrsavaju neki task
-                       
+
+                       /** <summary> 
+                        * 
+                        * U slucaju da sve dostupne niti iz bazena niti izvrsavaju neki zadatak,
+                        * a pojavio se novi zadatak koji ceka na izvrsavanje, vrsice se provjera da li medju zadacima koji 
+                        * se trenutno izvrsavaju ima neki koji nije pauziran, i ciji prioritet je manji od prioriteta novog
+                        * zadatka. Ukoliko je pronadjen takav zadatak, dolazi do preuzimanja.
+                        * Buduci da je samo izvrsavanje zadatka definisano na opisan nacin, preuzimanje ce se izvrsiti
+                        * tako sto ce se zadatku koji se izvrsava proslijediti zadatak koji ga preuzima, sa potrebnim
+                        * argumentima, a on ce biti pauziran. Zadatak koji preuzima ce biti uklonjen iz liste pendingTasks,
+                        * kako bi se sprijecilo da se izvrsi ponovo na nekoj drugoj niti.
+                        * Dakle, ovaj zadatak ce biti izvrsen na niti sada pauziranog zadatka, a po njegovom zavrsetku, bice
+                        * postavljeni odredjeni flegovi koji ce omoguciti nastavak izvrsavanja pauziranog zadatka.
+                        * 
+                        * </summary>
+                        * **/
                         if (currentlyRunning.Count == maxDegreeOfParallelism)
                         {                           
                             if (novi != null)
                             {
                                 if (mapa.TryGetValue(novi, out MyTask mt))
                                 {
-                                    Console.WriteLine("novi  {0}", mt.taskPriority);
-
-                                    // novi - koji je zadnji stigao 
-                                    
-                                    Console.WriteLine("currently running: "+currentlyRunning.Count );
+                                    //Console.WriteLine("currently running: "+currentlyRunning.Count );
 
                                     List<MyTask> miniList = new List<MyTask>();
                                     for(int i=0;i<currentlyRunning.Count;i++)
@@ -88,14 +113,14 @@ namespace Zadatak1
                                     
                                     if (min.taskPriority < mt.taskPriority)
                                     {
-                                        Console.WriteLine(" mt{0} => min{1}", mt.taskPriority, min.taskPriority);
+                                        Console.WriteLine(" {0} => {1}", mt.taskPriority, min.taskPriority);
                                         min.executeNextInfo = mt;
                                         min.executeNext = mt.taskToExecute;
                                         min.Pause();
                                         lock (pendingTasks)
                                         {
                                             pendingTasks.RemoveAt(mt.position);
-                                            allTasks.RemoveAt(mt.position);
+                                            allTasks.RemoveAt(mt.position);                                            
                                         }
                                     }
 
@@ -142,6 +167,20 @@ namespace Zadatak1
                         allTasks.RemoveAt(0);
                     }
 
+                    /** <summary>
+                     * 
+                     * Do ovog trenutka, trenutna nit iz naseg thread pool-a je iz liste pendingTasks uzela zadatak 
+                     * koji ce izvrsiti.
+                     * Na osnovu dobijenog zadatka, iz mape pronalazimo podatke o njemu.
+                     * Konkretno, trazimo definisano maksimalno vrijeme izvrsavanja, nakon kojeg zadatak treba da se 
+                     * zavrsi. 
+                     * Ovdje se pokrece nova nit, koja ce prvo da odspava taj period, a potom da tom zadatku postavi
+                     * isCancelled fleg na true, cime ce oznaciti da se taj zadatak prekida, usljed prekoracenja
+                     * vremenskog roka izvrsenja. 
+                     * 
+                     * </summary> 
+                     * **/
+
                     if (mapa.TryGetValue(task, out MyTask taskToTerminate))
                     {
                         currentlyRunning.Add(taskToTerminate);
@@ -152,9 +191,9 @@ namespace Zadatak1
                         });
                         callback.Start();
                     }
-                                        
-                    TryExecuteTask(task);                   
-                    
+                             
+                    /// Trenutak u kome se zadatak zaista pokrece na trenutnoj niti.
+                    TryExecuteTask(task);                
                     
                 } catch (Exception e)
                 {
@@ -165,8 +204,8 @@ namespace Zadatak1
 
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
-             //Console.WriteLine("ne daj boze");
-             return false;
+            //Console.WriteLine("ne daj boze");
+            return false;
         }        
 
         public void AddTask(MyTask myTask)
@@ -187,6 +226,14 @@ namespace Zadatak1
             mapaInverted.Add(myTask, myTask.task);
             taskovi.Add(myTask.task);
 
+            foreach(var x in taskovi)
+            {
+               if( mapa.TryGetValue(x, out MyTask t))
+               {
+                    Console.Write(t.taskPriority+" ");
+               }
+            }
+            Console.WriteLine("\n");
 
             //Console.WriteLine("allTasks:");
             //foreach (var x in allTasks)
@@ -243,5 +290,21 @@ namespace Zadatak1
         {
             return "Prioritet: " + taskPriority;
         }
-    }      
+    }
+    
+
+    public class MyResource
+    {
+        public object resource;
+        public int requesterID;
+        public int holderID;
+
+        public MyResource()
+        {
+
+        }
+
+
+        
+    }
 }

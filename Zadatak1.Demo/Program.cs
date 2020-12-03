@@ -6,6 +6,7 @@ namespace Zadatak1.Demo
 {
     class Program
     {
+
         const int numOfThreads = 4;
         const int defaultDuration = 10;
 
@@ -41,7 +42,6 @@ namespace Zadatak1.Demo
                     {
                         MyTaskScheduler.currentlyRunning.Remove(mt);
                     }
-                    mt.isDone = true;
                     return;
                 }
 
@@ -51,7 +51,6 @@ namespace Zadatak1.Demo
             }
             Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  ZAVRSEN.");
 
-            mt.isDone = true;
             lock(MyTaskScheduler.currentlyRunning)
             {
                 MyTaskScheduler.currentlyRunning.Remove(mt);
