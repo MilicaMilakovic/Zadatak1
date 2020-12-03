@@ -7,42 +7,49 @@ using System.Linq;
 
 namespace Zadatak1
 {
+    /// <summary>
+    /// Delegat na funkciju koju korisnik prosljedjuje na rasporedjivac.
+    /// Pokazuje na <c>printFunction</c>, definisanu u sklopu Zadatak1.Demo fajla.
+    /// </summary>
+    /// <param name="mt">Objekat tipa MyTask, unutar koga su sadrzane sve informacije o tasku koji se izvrsava.</param>
     public delegate void TaskToExecute(MyTask mt);
 
-    /*<summary>Klasa <c>MyTaskScheduler</c> 
-     * predstavlja klasu koja modeluje rasporedjivac zadataka. 
-     * Ova klasa nasljedjuje klasu <c>TaskScheduler</c>. </summary> 
-     * **/
+    ///<summary>Klasa <c>MyTaskScheduler</c> 
+    /// predstavlja klasu koja modeluje rasporedjivac zadataka. 
+    ///Ova klasa nasljedjuje klasu <c>TaskScheduler</c>. </summary> 
+    
     public class MyTaskScheduler : TaskScheduler
     {
-        //niti u bazenu
+        /// <summary>Niti u bazenu.</summary>
         private Thread[] myThreadPool;
 
-        // koliko taskova moze istovremeno da se izvrsava, broj niti u thread pool-u
+        /// <summary>Koliko taskova moze istovremeno da se izvrsava, odnosno broj niti u thread pool-u.</summary>
         private int MaxDegreeOfParallelism;
 
-        // pozicija na koju se dodaje novi zadatak u listi allTasks
+        /// <summary>Pozicija na koju se dodaje novi zadatak u listi allTasks.</summary>
         private int position;
 
-        // svi taskovi 
+        /// <summary>Svi taskovi. </summary>
         public static List<MyTask> allTasks = new List<MyTask>();
         
         public static List<Task> taskovi = new List<Task>();
 
-        // taskovi koji treba da se izvrse
+        /// <summary>Taskovi koji treba da se izvrse.</summary>
         public static List<Task> pendingTasks = new List<Task>();
 
-        // taskovi koji se trenutno izvrsavaju
-        public static List<MyTask> currentlyRunning=new List<MyTask>();       
+        /// <summary>Taskovi koji se trenutno izvrsavaju.</summary>
+        public static List<MyTask> currentlyRunning=new List<MyTask>();
 
-        // flag pomocu kojeg se bira preventivno ili nepreventivno rasporedjivanje
+        /// <summary>Flag pomocu kojeg se bira preventivno ili nepreventivno rasporedjivanje.</summary>
         private static bool preemption = false;
 
-        // zadatak koji ceka na izvrsavanje, zbog zauzetosti svih niti
+        /// <summary>Zadatak koji ceka na izvrsavanje, zbog zauzetosti svih niti.</summary>
         Task novi;
 
         private Dictionary<Task, MyTask> mapa = new Dictionary<Task, MyTask>();
         private Dictionary<MyTask, Task> mapaInverted = new Dictionary<MyTask, Task>();
+
+        public static List<MyResource> resources = new List<MyResource>();
 
         public MyTaskScheduler(int maxDegreeOfParallelism)
         {
@@ -81,7 +88,7 @@ namespace Zadatak1
                         * a pojavio se novi zadatak koji ceka na izvrsavanje, vrsice se provjera da li medju zadacima koji 
                         * se trenutno izvrsavaju ima neki koji nije pauziran, i ciji prioritet je manji od prioriteta novog
                         * zadatka. Ukoliko je pronadjen takav zadatak, dolazi do preuzimanja.
-                        * Buduci da je samo izvrsavanje zadatka definisano na opisan nacin, preuzimanje ce se izvrsiti
+                        * Buduci da je izvrsavanje zadatka definisano na opisan nacin, preuzimanje ce se izvrsiti
                         * tako sto ce se zadatku koji se izvrsava proslijediti zadatak koji ga preuzima, sa potrebnim
                         * argumentima, a on ce biti pauziran. Zadatak koji preuzima ce biti uklonjen iz liste pendingTasks,
                         * kako bi se sprijecilo da se izvrsi ponovo na nekoj drugoj niti.
@@ -132,6 +139,48 @@ namespace Zadatak1
                     }
                 }); pauseTask.Start();
             }
+
+            /// <summary>
+            /// 
+            /// Nit koja vrsi detekciju deadlock-a, na nacin da prolazi kroz listu resursa.
+            /// Deadlock ce se desiti u slucaju da se nadju dva resursa takva da je holder jednog requester 
+            /// drugog, i obrnuto.
+            /// 
+            /// Ako su pronadjena takva dva resursa, nit je detektovala deadlock, koji ce razrijesiti na nacin
+            /// sto ce uzeti zadatak holder sa manjim prioritetom, i terminirati ga.
+            /// 
+            /// </summary>
+            
+            Thread deadlockDetector = new Thread ( () =>
+            {
+                while(true)
+                {
+                    Thread.Sleep(500);
+
+                    if(resources.Count > 0)
+                    {
+                        for(int i=0; i < resources.Count-1; i++)
+                        {
+                            MyResource resource = resources[i];
+
+                            for(int j=1; j < resources.Count; j++)
+                            {
+                                if (resource.holder != null && resource.requester == resources[j].holder && resource.holder == resources[j].requester)
+                                {
+                                    Console.WriteLine("Detektovan deadlock!");
+
+                                    // razrjesenje - task sa manjim prioritetom se terminira
+
+                                    MyTask endTask = resource.holder.taskPriority < resources[j].holder.taskPriority ? resource.holder : resources[j].holder;
+                                    endTask.Cancel();
+                                }
+                            }
+                        }
+                    }
+                }
+
+            });
+            deadlockDetector.Start();
         }
 
         protected override IEnumerable<Task> GetScheduledTasks()
@@ -145,8 +194,20 @@ namespace Zadatak1
             {
                 pendingTasks.Insert(position, task);               
             }
-        }       
-
+        }
+        /** <summary>
+                    * 
+                    * Do ovog trenutka, trenutna nit iz naseg thread pool-a je iz liste pendingTasks uzela zadatak 
+                    * koji ce izvrsiti.
+                    * Na osnovu dobijenog zadatka, iz mape pronalazimo podatke o njemu.
+                    * Konkretno, trazimo definisano maksimalno vrijeme izvrsavanja, nakon kojeg zadatak treba da se 
+                    * zavrsi. 
+                    * Ovdje se pokrece nova nit <c>callBack</c>, koja ce prvo da odspava taj period, a potom da tom zadatku postavi
+                    * isCancelled fleg na true, cime ce oznaciti da se taj zadatak prekida, usljed prekoracenja
+                    * vremenskog roka izvrsenja. 
+                    * 
+                    * </summary> 
+                    * **/
         private void RunTask()
         {
             while (true)
@@ -166,20 +227,7 @@ namespace Zadatak1
                         pendingTasks.RemoveAt(0);
                         allTasks.RemoveAt(0);
                     }
-
-                    /** <summary>
-                     * 
-                     * Do ovog trenutka, trenutna nit iz naseg thread pool-a je iz liste pendingTasks uzela zadatak 
-                     * koji ce izvrsiti.
-                     * Na osnovu dobijenog zadatka, iz mape pronalazimo podatke o njemu.
-                     * Konkretno, trazimo definisano maksimalno vrijeme izvrsavanja, nakon kojeg zadatak treba da se 
-                     * zavrsi. 
-                     * Ovdje se pokrece nova nit, koja ce prvo da odspava taj period, a potom da tom zadatku postavi
-                     * isCancelled fleg na true, cime ce oznaciti da se taj zadatak prekida, usljed prekoracenja
-                     * vremenskog roka izvrsenja. 
-                     * 
-                     * </summary> 
-                     * **/
+                   
 
                     if (mapa.TryGetValue(task, out MyTask taskToTerminate))
                     {
@@ -208,6 +256,15 @@ namespace Zadatak1
             return false;
         }        
 
+        /// <summary>
+        /// Zadatak se prvo dodaje u listu <c>allTasks</c>, koja se potom sortira. Unutar te liste 
+        /// pronalazi se indeks pristiglog zadatka u odnosu na koji cemo odrediti poziciju unutar 
+        /// <c>pendingTasks</c> liste. 
+        /// Ako su trenutno sve niti zauzete, u slucaju preventivnog rasporedjivanja, task postaje kandidat
+        /// za preuzimanje.
+        /// Task se potom startuje na nasem rasporedjivacu, i dodaje se u potrebne liste i mape.
+        /// </summary>
+        /// <param name="myTask">Zadatak koji se dodaje u rasporedjivac.</param>
         public void AddTask(MyTask myTask)
         {
             allTasks.Add(myTask);
@@ -226,14 +283,14 @@ namespace Zadatak1
             mapaInverted.Add(myTask, myTask.task);
             taskovi.Add(myTask.task);
 
-            foreach(var x in taskovi)
-            {
-               if( mapa.TryGetValue(x, out MyTask t))
-               {
-                    Console.Write(t.taskPriority+" ");
-               }
-            }
-            Console.WriteLine("\n");
+            //foreach(var x in taskovi)
+            //{
+            //   if( mapa.TryGetValue(x, out MyTask t))
+            //   {
+            //        Console.Write(t.taskPriority+" ");
+            //   }
+            //}
+            //Console.WriteLine("\n");
 
             //Console.WriteLine("allTasks:");
             //foreach (var x in allTasks)
@@ -253,6 +310,30 @@ namespace Zadatak1
         }
     }
 
+    /**
+     * <summary>
+     * 
+     * Klasa <c>MyTask</c> predstavlja klasu unutar koje su sadrzane sve potrebne informacije u vezi sa 
+     * zadatkom koji se rasporedjuje za izvrsavanje.
+     * Ove informacije odnose se na prioritet zadatka, njegovu poziciju unutar liste zadataka koji se 
+     * rasporedjuju, maksimalno trajanje, te statusne informacije koje govore o tome da li je zadatak pauziran,
+     * prekinut ili zavrsen.
+     * 
+     * Takodje, unutar klase definisan je delegat na funkciju koju korisnik prosljedjuje, kao i Task koji bi trebalo
+     * da izvrsi tu funkciju, na niti iz bazena koja ga je preuzela iz liste pendingTasks.
+     * 
+     * <c>executeNext</c> i <c>executeNextInfo</c> predstavljaju polja koja su od znacaja u slucaju preventivnog 
+     * rasporedjivanja, u slucaju da je zadatak pauziran jer je naisao zadatak sa vecim prioritetom, koji treba da 
+     * se izvrsi prije njega.
+     * 
+     * Ideja je da se u navedenom slucaju pokrene izvrsavanje <c>executeNext</c>, sa proslijedjenim argumentom
+     * <c>executeNextInfo</c> na istoj niti, a po zavrsetku da se zadatak ukloni iz pendingTasks, i nastavi izvrsavanje
+     * pauziranog zadatka.
+     * 
+     * Definisane metode u sklopu klase sluze samo za postavljanje navedenih statusnih flegova.
+     * 
+     * </summary>
+     * */
     public class MyTask
     {
         public int taskPriority;
@@ -291,20 +372,55 @@ namespace Zadatak1
             return "Prioritet: " + taskPriority;
         }
     }
-    
+
+    /// <summary>
+    /// Klasa <c>MyResource</c> predstavlja model resursa koji zadaci koriste.
+    /// Unutar nje nalazi se stvarni objekat koji ce sluziti za zakljucavanje.
+    /// 
+    /// Ideja je da za svaki resurs koji ce se koristiti znamo koji task ga 
+    /// pokusava zakljucati, i koji task ga trenutno drzi.
+    /// Kada task zakljuca resurs, on postavi sebe za holder-a, zavrsava posao, i uklanja holder-a.
+    /// 
+    /// </summary>
 
     public class MyResource
     {
-        public object resource;
-        public int requesterID;
-        public int holderID;
+        public object resource = new object();
+        public MyTask requester;
+        public MyTask holder;
+        private static int count;
+        int id;
 
         public MyResource()
         {
+            id = count;
+            ++count;
+        }
+                
+        public void TryGetLock(MyTask mt)
+        {
+             requester = mt;
+             Console.WriteLine("try get lock " + id + " requester: " + mt.taskPriority);
+             if (holder == null)
+             {
+                 LockResource(mt);
+             }
 
         }
 
+        private void LockResource(MyTask mt)
+        {
+            lock (resource)
+            {
+                holder = mt;
+                Console.WriteLine("zakljucan " + id+" drzi ga:" + holder.taskPriority + " req "+ requester.taskPriority);
 
-        
+                requester = null;
+
+                // Simulate work
+                Thread.Sleep(5000);
+                holder = null;
+            }          
+        }
     }
 }
