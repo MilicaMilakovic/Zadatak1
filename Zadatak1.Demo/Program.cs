@@ -1,151 +1,170 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
 
 namespace Zadatak1.Demo
 {
     class Program
-    {        
-        static void Main(string[] args)
+    {
+        /// <summary>Broj niti u bazenu niti. Maksimalan nivo paralelizma.</summary>
+        const int numOfThreads = 4;
+
+        const int defaultDuration = 10;
+
+        public static MyTaskScheduler mts;
+
+        /// <summary>
+        /// Funkcija koju korisnik poziva za rasporedjivanje zadataka.
+        /// </summary>
+        /// <param name="priority">Prioritet zadatka.</param>
+        /// <param name="tte">Ono sto zadatak treba da izvrsi.</param>
+        /// <param name="maxDuration">Rok izvrsenja prosljedjenog zadatka.</param>
+        public static void ScheduleTask(int priority, TaskToExecute tte, int maxDuration)
         {
+            MyTask task = new MyTask(priority, tte, maxDuration);
+            mts.AddTask(task);
+        }
 
-            const int numOfThreads = 4;
-                       
-            Console.WriteLine("Hello World!");
-          
+        /// <summary>
+        /// 
+        /// Funkcija koja simulira zadatak koji treba da se rasporedi i izvrsi.
+        /// Da bi rasporedjivac radio ispravno, korisnicka funkcija mora biti definisana na ovaj nacin.
+        /// 
+        /// Pretpostavlja se da ce zadatak koji se izvrsava trajati <c>defaultDuration</c> sekundi, a samo izvrsavanje
+        /// se simulira prolaskom kroz for petlju.
+        /// 
+        /// Kako bi se omogucilo kooperativno zaustavljanje, neophodno je provjeravati status zadatka koji se izvrsava,
+        /// te u skladu sa vrijednostima flegova, vrsiti bilo pauziranje, ili zaustavljanje taska.
+        /// 
+        /// U slucaju da je zadatak prekinut jer je prekoracio rok izvrsavanja, bice uklonjen sa liste zadataka koji se 
+        /// trenutno izvrsavaju, i izvrsavanje ce biti okoncano, uz ispis odgovarajuce poruke.
+        /// 
+        /// Ukoliko je zadatak pauziran, sto se moze desiti u slucaju preventivnog rasporedjivanja, ako umjesto njega 
+        /// treba da se izvrsi zadatak veceg prioriteta, koristi se polje <c>executeNext</c>, koje omogucava
+        /// pokretanje novog zadatka na trenutnom thread-u, te nastavljanje pauziranog zadatka, po zavrsetku novog.
+        /// 
+        /// </summary>
+        /// <param name="mt">Podaci o zadatku koji se izvrsava.</param>
 
-            MyTaskScheduler mts = new MyTaskScheduler(numOfThreads);
-            LaneWriter laneWriter = new LaneWriter(numOfThreads);
-
-            void printFunction(int value)
+        public static void printFunction(MyTask mt)
+        {
+            for (int i = 0; i < defaultDuration; ++i)
             {
+                if(mt.isPaused)
+                {
+                    Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  PAUZIRAN.");
 
-                //for (int i = 0; i < 10; ++i)
-                //{
-                //    laneWriter.WriteToLane(Thread.CurrentThread.ManagedThreadId, value);
-                //    laneWriter.PrintLanes();
-                //    Task.Delay(1000).Wait();
-                //}
+                    if (mt.executeNext != null && mt.executeNextInfo != null)
+                    {
+                        mt.executeNext(mt.executeNextInfo);
+
+                        Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  NASTAVLJA...");
+                        mt.Resume();
+                    }
+                }              
+
+                if (mt.isCancelled)
+                {
+                    Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  PREKINUT.");
+                    lock (MyTaskScheduler.currentlyRunning)
+                    {
+                        MyTaskScheduler.currentlyRunning.Remove(mt);
+                    }
+                    return;
+                }
+
+                Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId);
+
+                Task.Delay(1000).Wait();
             }
+            Console.WriteLine("Prioritet:" + mt.taskPriority + "| ThreadID:" + Thread.CurrentThread.ManagedThreadId + " |  ZAVRSEN.");
 
+            lock(MyTaskScheduler.currentlyRunning)
+            {
+                MyTaskScheduler.currentlyRunning.Remove(mt);
+            }
+        }
+               
+        /// <summary>
+        /// Funkcije koje ce se pozvati umjesto printFunction, za demonstraciju deadlock-a.
+        /// </summary>
+        /// <param name="mt"></param>
+        public static void deadlock1 (MyTask mt)
+        {
+            Console.WriteLine("deadlock1");
+
+            MyTaskScheduler.resources[0].TryGetLock(mt);
+            Thread.Sleep(1000);             
+            MyTaskScheduler.resources[1].TryGetLock(mt);
+           
+        }
+        public static void deadlock2(MyTask mt)
+        {
+            Console.WriteLine("deadlock2");
+            
+            MyTaskScheduler.resources[1].TryGetLock(mt);
+            Thread.Sleep(1000);            
+            MyTaskScheduler.resources[0].TryGetLock(mt);            
+        }
+
+        public static void deadlockDemo()
+        {
+            MyTaskScheduler.resources.Add(new MyResource());
+            MyTaskScheduler.resources.Add(new MyResource());
+
+            ScheduleTask(7, deadlock1, 11);
+            ScheduleTask(3, deadlock2, 11);
+
+        }
+
+        static void Main(string[] args)
+        {                                
+            Console.WriteLine("Hello World! Pritisnuti enter na kraju...\n");
+           
+            
             TaskToExecute tte = printFunction;
 
-            mts.AddTask(3, (x) => { Console.WriteLine(3 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(10000);      
-            }, 1000);
-            mts.AddTask(2, (x) => { Console.WriteLine(2 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(1200);
-            },500);            
-            mts.AddTask(1, (x) => { Console.WriteLine(1 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(1100);
-            },1000);
-            mts.AddTask(5, (x) => { Console.WriteLine(5 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(1500);
-            },1000);
-            mts.AddTask(7, (x) => { Console.WriteLine(7 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(1700);
-            },1000);
-            mts.AddTask(4, (x) => { Console.WriteLine(4 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(1400);
-            },1200);
-            mts.AddTask(8, (x) => { Console.WriteLine(8 + " nit " + Thread.CurrentThread.ManagedThreadId);
-                Thread.Sleep(1800);
-            },1000);
+            //MyTaskScheduler.setPreemption();
+
+            mts = new MyTaskScheduler(numOfThreads);
+
+            //deadlockDemo();
+
+             ScheduleTask(7, printFunction, 11);
+             ScheduleTask(3, printFunction, 11);
+             ScheduleTask(2, printFunction, 11);
+             ScheduleTask(4, printFunction, 11);
+
+             Thread.Sleep(5000);
+
+            Console.WriteLine("=>  Dolazi prioritet 10...");
+
+            ScheduleTask(10, printFunction, 5);
 
 
+             Thread.Sleep(3000);
+            Console.WriteLine("=>  Dolazi prioritet 8...");
 
-            /* Action action1 = () =>
-                 {
-                     for (int j = 0; j < 10; j++)
-                     {
-                         Console.WriteLine("5  running on thread  " + Thread.CurrentThread.ManagedThreadId);
+            ScheduleTask(8, printFunction, 11);
 
-                         Thread.Sleep(1000);
-                     }
-                 };
+            Thread.Sleep(5000);
+            Console.WriteLine("=>  Dolazi prioritet 9...");
+            ScheduleTask(9, printFunction, 7);
 
-             Task t11 = new Task(action1);
+            try
+            {
+                Console.ReadLine();
+                //Task.WaitAll(MyTaskScheduler.taskovi.ToArray());
 
+                Console.WriteLine("=======================================");
+                Console.WriteLine("\t \t Done.");
 
-             //TaskFactory tf = new TaskFactory(mts);
-
-             //Task tttt = Task.Factory.StartNew(() =>
-             //{
-             //    Console.WriteLine(5);
-             //    Thread.Sleep(1000);
-             //});
-
-
-             mts.AddTask(5, t11);
-             Thread.Sleep(2000);
-
-            Action action2 = () =>
-             {
-                 for (int j = 0; j < 10; j++)
-                 {
-                     Console.WriteLine("3  running on thread    " + Thread.CurrentThread.ManagedThreadId);
-                     Thread.Sleep(1000);
-                 }
-             };
-             Task t2 = new Task(action2);
-
-             mts.AddTask(3, t2);
-
-
-             Action action3 = () =>
-             {
-                 for (int j = 0; j < 10; j++)
-                 {
-                     Console.WriteLine(9 + "  running on thread   " + Thread.CurrentThread.ManagedThreadId);
-                     Thread.Sleep(1000);
-                 }
-             };
-             Task t3 = new Task(action3);
-
-             mts.AddTask(9, t3);
-
-
-             Action action4 = () =>
-             {
-                 for (int j = 0; j < 10; j++)
-                 {
-                     Console.WriteLine(2 + "  running on thread   " + Thread.CurrentThread.ManagedThreadId);
-                     Thread.Sleep(1000);
-                 }
-             };
-             Task t4 = new Task(action4);
-
-             mts.AddTask(2, t4);
-
-             Action action5 = () =>
-             {
-                 for (int j = 0; j < 10; j++)
-                 {
-                     Console.WriteLine(1 + " running on thread    " + Thread.CurrentThread.ManagedThreadId);
-                     Thread.Sleep(1000);
-                 }
-             };
-             Task t5 = new Task(action5);
-
-             mts.AddTask(1, t5);
-
-             /*
-
-             Action action6 = () =>
-             {
-                 for (int j = 0; j < 10; j++)
-                 {
-                     Console.WriteLine(7);
-                     Thread.Sleep(1000);
-                 }
-             };
-             Task t6 = new Task(action6);
-             mts.AddTask(7, t6);
-             */
-
-
+                Environment.Exit(0);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

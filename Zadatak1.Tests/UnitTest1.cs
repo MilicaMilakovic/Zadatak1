@@ -8,6 +8,7 @@ namespace Zadatak1.Tests
         [TestMethod]
         public void TestMethod1()
         {
+
         }
     }
 }
