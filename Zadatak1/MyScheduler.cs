@@ -66,7 +66,7 @@ namespace Zadatak1
                 myThreadPool[i].Start();
                 Console.WriteLine("Thread"+myThreadPool[i].ManagedThreadId +" start. " );
             }
-
+            Console.WriteLine();
             /** <summary> U slucaju preventivnog zaustavljanja, pokrece se nit koja ce da pauzira izvrsavanje
              * zadatka najmanjeg prioriteta, i na toj niti iz thread pool-a pokrene izvrsavanje novog zadatka,
              * ukoliko je njegov prioritet veci od prioriteta pauziranog. Nit konstatno radi i provjerava da li
@@ -76,7 +76,8 @@ namespace Zadatak1
             {
                 Thread pauseTask = new Thread(() =>
                 {
-                    Console.WriteLine("pauseTask started");
+                    Console.WriteLine("=>   pauseTask started");
+                    Console.WriteLine();
 
                     while (true)
                     {
@@ -265,6 +266,7 @@ namespace Zadatak1
         /// Task se potom startuje na nasem rasporedjivacu, i dodaje se u potrebne liste i mape.
         /// </summary>
         /// <param name="myTask">Zadatak koji se dodaje u rasporedjivac.</param>
+        
         public void AddTask(MyTask myTask)
         {
             allTasks.Add(myTask);
@@ -334,6 +336,7 @@ namespace Zadatak1
      * 
      * </summary>
      * */
+
     public class MyTask
     {
         public int taskPriority;
@@ -379,7 +382,7 @@ namespace Zadatak1
     /// 
     /// Ideja je da za svaki resurs koji ce se koristiti znamo koji task ga 
     /// pokusava zakljucati, i koji task ga trenutno drzi.
-    /// Kada task zakljuca resurs, on postavi sebe za holder-a, zavrsava posao, i uklanja holder-a.
+    /// Kada task zakljuca resurs, on postavi sebe za holdera, zavrsava posao, i uklanja holdera.
     /// 
     /// </summary>
 

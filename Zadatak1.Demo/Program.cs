@@ -119,7 +119,7 @@ namespace Zadatak1.Demo
 
         static void Main(string[] args)
         {                                
-            Console.WriteLine("Hello World!\n");
+            Console.WriteLine("Hello World! Pritisnuti enter na kraju...\n");
            
             
             TaskToExecute tte = printFunction;
@@ -137,28 +137,26 @@ namespace Zadatak1.Demo
 
              Thread.Sleep(5000);
 
-             Console.WriteLine("prvi thread sleep. dolazi prioritet 10");
+            Console.WriteLine("=>  Dolazi prioritet 10...");
 
-             ScheduleTask(10, printFunction, 5);
+            ScheduleTask(10, printFunction, 5);
 
 
              Thread.Sleep(3000);
-             Console.WriteLine("drugi thread sleep, dolazi 8");
+            Console.WriteLine("=>  Dolazi prioritet 8...");
 
-             ScheduleTask(8, printFunction, 11);
+            ScheduleTask(8, printFunction, 11);
 
-             Thread.Sleep(5000);
-             Console.WriteLine("treci thread sleep, dolazi 9");
-             ScheduleTask(9, printFunction, 7);
+            Thread.Sleep(5000);
+            Console.WriteLine("=>  Dolazi prioritet 9...");
+            ScheduleTask(9, printFunction, 7);
 
             try
             {
-                //Console.WriteLine("kraaaj");
                 Console.ReadLine();
-
                 //Task.WaitAll(MyTaskScheduler.taskovi.ToArray());
 
-                Console.WriteLine("=====================================");
+                Console.WriteLine("=======================================");
                 Console.WriteLine("\t \t Done.");
 
                 Environment.Exit(0);
