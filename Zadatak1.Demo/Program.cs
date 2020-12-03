@@ -171,7 +171,7 @@ namespace Zadatak1.Demo
             
             TaskToExecute tte = printFunction;
 
-            //nonPreemptiveDemo();
+            nonPreemptiveDemo();
 
             //preemptiveDemo();
 
