@@ -19,7 +19,7 @@ Niti iz našeg bazena uzimaju zadatke iz liste, te pokreću njihovo izvršavanje
 U slučaju nepreventivnog raspoređivanja, zadaci koji su raspoređeni će se izvršiti do kraja. Nit će, po izvršenju jednog, uzeti i izvršiti novi zadatak, ukoliko se on nalazi na listi `pendingTasks`. 
 U ovom slučaju je `private bool preemption = false;`, jer korisnik pri instanciranju objekta klase `MyTaskScheduler`, osim broja niti naveo i vrijednost `false`.
 
-![Primjer nepreventivnog izvršavanja](https://lh3.googleusercontent.com/_N7NIuzTK_kIetHZDsK2F6oE_acuwkxLZEyZAAVapJ5W2eKsyPa35uVe_8Feg5yBdWuQDd90ieWNI1AUeOtz-poeDI04mKTw7jXgEQsYD_I4yAZ0x0H5MeUNLGIV-RNhEobqByl3lJi7ZrF9hTgYkO2qW4jnjlwm5nrM6_RHqF3Wac_-dgJ0-EGJyT7_39_HG8_GuXDSMwpZ5dO397uZCai3sh5uMScpyrQdZqfoK1Ghq9cR5f0SL0994pLDWaqkJChXlKOisw6VgC4rgCXY2ZS858Pu14hgqoNR0mXf_AwS-_1qInRHUYAznAGt5LmvWJYjv6A1ZTKQx_NwBFC1vt4VjkAD5HRrUuRJPyrme472TAiHlCSpif-vSfmACJ46T9eN7Ho-6LmaaZ0koKAEyG3Z2hpyq2Vl9gESt9ZFDtGFdiKdOwzr6ilAZaBmfQHBdVO_48PC6CSCULpSoapgMx4qe3aHLCoivtlkyjkb30RxVWlIIo0or4b9H61yd5lNKAdlPSAWHywlf6mIJaD03dQB_6IO4N1NGEEzHiqf84s5I3Dj8O-DoPjxyBwo-qfKR2S3SBuwf7ZNW0eMPjNb5NiAmLWP3zAFZGEtDJqahVO-SEfVsvaZm1iQ1Q7s2YVVLk_vLIzqac84bPgtTEFbNlyJnAvY1SBXOlsB2a58boHCVRhsrLTHkRHjeflV=w711-h657-no?authuser=1)
+![Primjer nepreventivnog izvršavanja] (./nonPreemptiveScheduling.png)
 
 ### Preventivno raspoređivanje
 U slučaju preventivnog raspoređivanja, korisnik je pri kreiranju objekta klase `MyTaskScheduler` naveo vrijednost `true`, čime je kreirana i pokrenuta nit `pauseTask`.
@@ -30,7 +30,7 @@ Ova nit pauzira izvršavanje zadatka najmanjeg prioriteta, i na toj niti iz thre
 Funkcija koja je služila za simulaciju izvršenja zadatka jeste `public static void PrintFunction(MyTask mt)`.  Korisnička funkcija mora biti definisana na ovaj način, da bi raspoređivač ispravno radio, jer je na ovako omogućen pregled statusa zadatka, te njegovo prekidanje ili pauziranje, koje će biti od značaja u slučaju preventivnog raspoređivanja. 
 Detaljiniji opis navedene funkcije dat je u dokumentacionim komentarima.
 
-![Preventivno raspoređivanje](https://lh3.googleusercontent.com/wPOWkyFqreJ5fGcX_zDRv67ex8cxO2k3qKV6meQxSvfx4YOc1c93Rv5_RIvgIoLoeZDH3ySbqCEGFjrKWZBKHI_LhdMsRX80LGShpUmyPLJ64kJAqQpDCDkOQvQdlit9E8_Wxnlzgow18NxGjwqQWYMJ6G94XwdiItifPZs1swidor1G4Ia3rsPL8fuv0UZEy9w0ZGMCAQAxa6PhSLbbOAUIIdwjHSq1DihsWsv7_reMI89tmAp4zA_ZdyMjLz6kF5iGhSm2TOnSdQ4z-TvgW1EkUb6K41CMw_v65qkMcy1uaTIkiwftU8c6FojVg50WWXbJoYuNYK46hrwmCNItwMmM8WNbo5Mwo3Z1iW8jbT-bH1adXdLMgMTPPUBg73JDjr3tzds_sX5lsIFkgF1RYs-pzpwduEPUq2ooMtTfTQFim2XHkHvNnS1Tdo4tfocsZ6Xj-9XKc1Hu-VKsCTJygvviA5-Ov7f6OYhX1ZDfPpnG-pspH7GY_9h7lwNU09rQp9qMr5fEIkmdS9u7vGiWNhK0LBesXGsMX_c9RTf9zG7bZ_sLKwDWhX1xDLLunK7PSf6ZzFxDzDNeOywlHoFbIRUU1JCybp5zkWjDSTdhoWDBflSYHrJVeB2ByRwlDhfhUDRvqF0bBOLSBoQH4kBZPIjCOf54JGgSDNIRHHqfl7UU-hLxv-RKkOhyf3GG=w702-h657-no?authuser=1)
+![Preventivno raspoređivanje](./preemptiveScheduling.png)
 
 ### Specifikacija roka izvršenja zadataka
 Korisnik pri kreiranju novog zadatka navodi  i njegov rok izvršenja. Kada nit uzme zadatak koji će izvršiti, neposredno prije njegovog pokretanja, pokreće se nit `callBack` koja je zadužena da zadatak prekine ukoliko je prekoračio rok izvršenja. Na osnovu zadatka, iz mape nalazimo odgovarajući objekat tipa `MyTask`, unutar kojeg nalazimo definisani rok. Nit spava taj period, potom se budi i postavlja `isCancelled` na true.
