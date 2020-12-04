@@ -32,7 +32,7 @@ namespace Zadatak1
         /// <summary>Svi taskovi. </summary>
         public static List<MyTask> allTasks = new List<MyTask>();
         
-        public static List<Task> taskovi = new List<Task>();
+        public List<Task> taskovi = new List<Task>();
 
         /// <summary>Taskovi koji treba da se izvrse.</summary>
         public static List<Task> pendingTasks = new List<Task>();
@@ -41,7 +41,7 @@ namespace Zadatak1
         public static List<MyTask> currentlyRunning=new List<MyTask>();
 
         /// <summary>Flag pomocu kojeg se bira preventivno ili nepreventivno rasporedjivanje.</summary>
-        private static bool preemption = false;
+        public bool preemption = false;
 
         /// <summary>Zadatak koji ceka na izvrsavanje, zbog zauzetosti svih niti.</summary>
         Task novi;
@@ -51,10 +51,12 @@ namespace Zadatak1
 
         public static List<MyResource> resources = new List<MyResource>();
 
-        public MyTaskScheduler(int maxDegreeOfParallelism)
+        public MyTaskScheduler(int maxDegreeOfParallelism, bool preemption)
         {
             if (maxDegreeOfParallelism < 1) throw new Exception();
             MaxDegreeOfParallelism = maxDegreeOfParallelism;
+
+            this.preemption = preemption;
 
             myThreadPool = new Thread[maxDegreeOfParallelism];
             for (int i = 0; i < maxDegreeOfParallelism; i++)
@@ -306,7 +308,7 @@ namespace Zadatak1
             //Console.WriteLine("pending tasks count:" + pendingTasks.Count);
         }
 
-        public static void SetPreemption()
+        public void SetPreemption()
         {
             preemption = true;
         }

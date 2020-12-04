@@ -111,7 +111,7 @@ namespace Zadatak1.Demo
         {
             // :(
 
-            mts = new MyTaskScheduler(numOfThreads);
+            mts = new MyTaskScheduler(numOfThreads,false);
 
             MyTaskScheduler.resources.Add(new MyResource());
             MyTaskScheduler.resources.Add(new MyResource());
@@ -123,7 +123,7 @@ namespace Zadatak1.Demo
 
         public static void NonPreemptiveDemo()
         {
-            mts = new MyTaskScheduler(numOfThreads);
+            mts = new MyTaskScheduler(numOfThreads, false);
 
             ScheduleTask(7, PrintFunction, 11);
             ScheduleTask(3, PrintFunction, 11);
@@ -148,9 +148,8 @@ namespace Zadatak1.Demo
         }
 
         public static void PreemptiveDemo()
-        {
-            MyTaskScheduler.SetPreemption();
-            mts = new MyTaskScheduler(numOfThreads);            
+        {           
+            mts = new MyTaskScheduler(numOfThreads, true);            
 
             ScheduleTask(7, PrintFunction, 11);
             ScheduleTask(3, PrintFunction, 11);
@@ -184,7 +183,7 @@ namespace Zadatak1.Demo
             try
             {
                 Console.ReadLine();
-                //Task.WaitAll(MyTaskScheduler.taskovi.ToArray());
+                //Task.WaitAll(mts.taskovi.ToArray());
 
                 Console.WriteLine("=======================================");
                 Console.WriteLine("\t \t Done.");
