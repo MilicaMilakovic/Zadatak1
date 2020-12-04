@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Zadatak1.Demo
 {
-    class Program
+    public class Demo
     {
         /// <summary>Broj niti u bazenu niti. Maksimalan nivo paralelizma.</summary>
         const int numOfThreads = 4;
@@ -46,7 +46,7 @@ namespace Zadatak1.Demo
         /// </summary>
         /// <param name="mt">Podaci o zadatku koji se izvrsava.</param>
 
-        public static void printFunction(MyTask mt)
+        public static void PrintFunction(MyTask mt)
         {
             for (int i = 0; i < defaultDuration; ++i)
             {
@@ -89,7 +89,7 @@ namespace Zadatak1.Demo
         /// Funkcije koje ce se pozvati umjesto printFunction, za demonstraciju deadlock-a.
         /// </summary>
         /// <param name="mt"></param>
-        public static void deadlock1 (MyTask mt)
+        public static void Deadlock1 (MyTask mt)
         {
             Console.WriteLine("deadlock1");
 
@@ -98,7 +98,7 @@ namespace Zadatak1.Demo
             MyTaskScheduler.resources[1].TryGetLock(mt);
            
         }
-        public static void deadlock2(MyTask mt)
+        public static void Deadlock2(MyTask mt)
         {
             Console.WriteLine("deadlock2");
             
@@ -107,61 +107,65 @@ namespace Zadatak1.Demo
             MyTaskScheduler.resources[0].TryGetLock(mt);            
         }
 
-        public static void deadlockDemo()
+        public static void DeadlockDemo()
         {
+            // :(
+
+            mts = new MyTaskScheduler(numOfThreads);
+
             MyTaskScheduler.resources.Add(new MyResource());
             MyTaskScheduler.resources.Add(new MyResource());
 
-            ScheduleTask(7, deadlock1, 11);
-            ScheduleTask(3, deadlock2, 11);
+            ScheduleTask(7, Deadlock1, 11);
+            ScheduleTask(3, Deadlock2, 11);
 
         }
 
-        public static void nonPreemptiveDemo()
+        public static void NonPreemptiveDemo()
         {
             mts = new MyTaskScheduler(numOfThreads);
 
-            ScheduleTask(7, printFunction, 11);
-            ScheduleTask(3, printFunction, 11);
-            ScheduleTask(2, printFunction, 11);
-            ScheduleTask(4, printFunction, 11);
+            ScheduleTask(7, PrintFunction, 11);
+            ScheduleTask(3, PrintFunction, 11);
+            ScheduleTask(2, PrintFunction, 11);
+            ScheduleTask(4, PrintFunction, 11);
 
             Thread.Sleep(5000);
 
             //Console.WriteLine("=>  Dolazi prioritet 10...");
 
-            ScheduleTask(10, printFunction, 5);
+            ScheduleTask(10, PrintFunction, 5);
 
 
             Thread.Sleep(3000);
             //Console.WriteLine("=>  Dolazi prioritet 8...");
 
-            ScheduleTask(8, printFunction, 11);
+            ScheduleTask(8, PrintFunction, 11);
 
             Thread.Sleep(5000);
             //Console.WriteLine("=>  Dolazi prioritet 9...");
-            ScheduleTask(9, printFunction, 7);
+            ScheduleTask(9, PrintFunction, 7);
         }
 
-        public static void preemptiveDemo()
+        public static void PreemptiveDemo()
         {
-            MyTaskScheduler.setPreemption();
+            MyTaskScheduler.SetPreemption();
             mts = new MyTaskScheduler(numOfThreads);            
 
-            ScheduleTask(7, printFunction, 11);
-            ScheduleTask(3, printFunction, 11);
-            ScheduleTask(2, printFunction, 11);
-            ScheduleTask(4, printFunction, 11);
+            ScheduleTask(7, PrintFunction, 11);
+            ScheduleTask(3, PrintFunction, 11);
+            ScheduleTask(2, PrintFunction, 11);
+            ScheduleTask(4, PrintFunction, 11);
 
             Thread.Sleep(5000);
             Console.WriteLine("=>  Dolazi prioritet 10...");
-            ScheduleTask(10, printFunction, 5);
+            ScheduleTask(10, PrintFunction, 5);
             Thread.Sleep(3000);
             Console.WriteLine("=>  Dolazi prioritet 8...");
-            ScheduleTask(8, printFunction, 11);
+            ScheduleTask(8, PrintFunction, 11);
             Thread.Sleep(5000);
             Console.WriteLine("=>  Dolazi prioritet 9...");
-            ScheduleTask(9, printFunction, 7);
+            ScheduleTask(9, PrintFunction, 7);
         }
 
         static void Main(string[] args)
@@ -169,13 +173,13 @@ namespace Zadatak1.Demo
             Console.WriteLine("Hello World! Pritisnuti enter na kraju...\n");
            
             
-            TaskToExecute tte = printFunction;
+            TaskToExecute tte = PrintFunction;
 
-            nonPreemptiveDemo();
+            NonPreemptiveDemo();
 
-            //preemptiveDemo();
+            //PreemptiveDemo();
 
-            //deadlockDemo();
+            //DeadlockDemo();
 
             try
             {

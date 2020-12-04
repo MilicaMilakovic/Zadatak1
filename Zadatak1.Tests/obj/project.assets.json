@@ -1617,6 +1617,30 @@
         "runtime": {
           "lib/netstandard1.3/System.Xml.XPath.XmlDocument.dll": {}
         }
+      },
+      "Zadatak1/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.0",
+        "compile": {
+          "bin/placeholder/Zadatak1.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Zadatak1.dll": {}
+        }
+      },
+      "Zadatak1.Demo/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v2.1",
+        "dependencies": {
+          "Microsoft.NETCore.App": "2.1.0",
+          "Zadatak1": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Zadatak1.Demo.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Zadatak1.Demo.dll": {}
+        }
       }
     }
   },
@@ -5803,6 +5827,16 @@
         "system.xml.xpath.xmldocument.4.0.1.nupkg.sha512",
         "system.xml.xpath.xmldocument.nuspec"
       ]
+    },
+    "Zadatak1/1.0.0": {
+      "type": "project",
+      "path": "../Zadatak1/Zadatak1.csproj",
+      "msbuildProject": "../Zadatak1/Zadatak1.csproj"
+    },
+    "Zadatak1.Demo/1.0.0": {
+      "type": "project",
+      "path": "../Zadatak1.Demo/Zadatak1.Demo.csproj",
+      "msbuildProject": "../Zadatak1.Demo/Zadatak1.Demo.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -5810,7 +5844,9 @@
       "MSTest.TestAdapter >= 1.3.2",
       "MSTest.TestFramework >= 1.3.2",
       "Microsoft.NET.Test.Sdk >= 15.9.0",
-      "Microsoft.NETCore.App >= 2.1.0"
+      "Microsoft.NETCore.App >= 2.1.0",
+      "Zadatak1 >= 1.0.0",
+      "Zadatak1.Demo >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -5842,7 +5878,14 @@
       },
       "frameworks": {
         "netcoreapp2.1": {
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Users\\Milica\\Desktop\\ETF\\Odabrana poglavlja iz operativnih sistema\\Projektni zadaci\\Zadatak1\\OposZadaci2020\\Zadatak1.Demo\\Zadatak1.Demo.csproj": {
+              "projectPath": "C:\\Users\\Milica\\Desktop\\ETF\\Odabrana poglavlja iz operativnih sistema\\Projektni zadaci\\Zadatak1\\OposZadaci2020\\Zadatak1.Demo\\Zadatak1.Demo.csproj"
+            },
+            "C:\\Users\\Milica\\Desktop\\ETF\\Odabrana poglavlja iz operativnih sistema\\Projektni zadaci\\Zadatak1\\OposZadaci2020\\Zadatak1\\Zadatak1.csproj": {
+              "projectPath": "C:\\Users\\Milica\\Desktop\\ETF\\Odabrana poglavlja iz operativnih sistema\\Projektni zadaci\\Zadatak1\\OposZadaci2020\\Zadatak1\\Zadatak1.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

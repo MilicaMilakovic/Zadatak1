@@ -306,9 +306,14 @@ namespace Zadatak1
             //Console.WriteLine("pending tasks count:" + pendingTasks.Count);
         }
 
-        public static void setPreemption()
+        public static void SetPreemption()
         {
             preemption = true;
+        }
+
+        public int GetNumberOfThreadsInThreadPool()
+        {
+            return myThreadPool.Count();
         }
     }
 
